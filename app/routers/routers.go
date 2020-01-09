@@ -69,8 +69,9 @@ func Create(db *database.Mongo) *router.Router {
 	user.GET("/all", userHandler.GetUsers)
 
 	service := sv.Group("/service")
+	service.GET("/all", rootHandler(serviceHandler.GetServices))
 	service.POST("/", rootHandler(serviceHandler.CreateService))
-	service.GET("/all", serviceHandler.GetServices)
+	service.PUT("/:id", rootHandler(serviceHandler.UpdateServiceByID))
 	// auth.GET("/", Index)
 	return r
 }

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"jongme/app/model"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -45,14 +46,15 @@ func (m *Mongo) GetServices(paging *model.Paging) ([]*model.Service, error) {
 func (m *Mongo) UpdateService(service *model.Service) error {
 	opts := options.FindOneAndReplace()
 	filter := bson.D{{"_id", service.ID}}
-
+	fmt.Println(service)
 	result := m.DB.Collection("services").
 		FindOneAndReplace(context.Background(),
 			filter,
 			service,
 			opts,
 		)
-	service = new(model.User)
+
+	service = new(model.Service)
 	if err := result.Decode(service); err != nil {
 		return err
 	}

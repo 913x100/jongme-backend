@@ -28,6 +28,28 @@ type createServiceRequest struct {
 	EndTime           int64  `json:"end_time"`
 }
 
+type updateServiceRequest struct {
+	ID                primitive.ObjectID `json:"_id" validate:"required"`
+	PageID            string             `json:"page_id" validate:"required"`
+	Name              string             `json:"name" validate:"required"`
+	Type              string             `json:"type"`
+	Quantity          int64              `json:"quantity"`
+	MinimumTimeLength int64              `json:"minimum_time_length"`
+	StartTime         int64              `json:"start_time"`
+	EndTime           int64              `json:"end_time"`
+}
+
+type serviceResponse struct {
+	ID                primitive.ObjectID `json:"_id"`
+	PageID            string             `json:"page_id"`
+	Name              string             `json:"name"`
+	Type              string             `json:"type"`
+	Quantity          int64              `json:"quantity"`
+	MinimumTimeLength int64              `json:"minimum_time_length"`
+	StartTime         int64              `json:"start_time"`
+	EndTime           int64              `json:"end_time"`
+}
+
 type ServiceAPI struct {
 	DB       ServiceDatabase
 	Validate *validator.Validate
@@ -66,8 +88,12 @@ func (s *ServiceAPI) CreateService(ctx *fasthttp.RequestCtx) error {
 	return nil
 }
 
-func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) {
+func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) error {
 	ctx.SetContentType("application/json;charset=utf-8")
+
+	if !ctx.IsGet() {
+		return errs.NewHTTPError(nil, 405, "Method not allowed.")
+	}
 
 	var (
 		start int64  = 0
@@ -102,24 +128,61 @@ func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) {
 			SortVal:   order,
 			Condition: nil,
 		})
+
 	if err != nil {
-		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
-		ctx.SetBodyString("Cannot get  services from database")
+		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	json.NewEncoder(ctx).Encode(users)
-}
-
-func (s *ServiceAPI) UpdateService(ctx *fasthttp.RequestCtx) error {
 	return nil
 }
 
+func (s *ServiceAPI) UpdateServiceByID(ctx *fasthttp.RequestCtx) error {
+	if !ctx.IsPut() {
+		return errs.NewHTTPError(nil, 405, "Method not allowed.")
+	}
+
+	input := updateServiceRequest{}
+
+	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
+		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
+	}
+
+	if err := s.Validate.Struct(input); err != nil {
+		return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
+	}
+
+	service := model.Service{
+		ID:                input.ID,
+		PageID:            input.PageID,
+		Name:              input.Name,
+		Type:              input.Type,
+		Quantity:          input.Quantity,
+		MinimumTimeLength: input.MinimumTimeLength,
+		StartTime:         input.StartTime,
+		EndTime:           input.EndTime,
+	}
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	return withID(ctx, "id", func(id primitive.ObjectID) error {
+		if err := s.DB.UpdateService(&service); err != nil {
+			return errs.NewHTTPError(err, 404, "service down not exists.")
+		}
+		return nil
+	})
+}
+
 func (s *ServiceAPI) DeleteServiceByID(ctx *fasthttp.RequestCtx) error {
-	withID(ctx, "id", func(id primitive.ObjectID) error {
+	if !ctx.IsDelete() {
+		return errs.NewHTTPError(nil, 405, "Method not allowed.")
+	}
+
+	withID(ctx, "_id", func(id primitive.ObjectID) error {
 		if err := s.DB.DeleteServiceByID(id); err != nil {
 			return errs.NewHTTPError(err, 500, "Internal server error.")
 		}
 		return nil
 	})
+
+	ctx.SetStatusCode(fasthttp.StatusOK)
 	return nil
 }
