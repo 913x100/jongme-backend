@@ -103,7 +103,8 @@ func do(req *fasthttp.Request, resp *fasthttp.Response, c *fasthttp.Client) (r n
 		fmt.Println(err.Error())
 		return network.Response{Response: nil, Err: err}
 	}
-	response := map[string]interface{}{}
+	var response map[string]interface{}
+	// response := map[string]interface{}{}
 	err = json.Unmarshal(resp.Body(), &response)
 	if err != nil {
 		fmt.Printf("ERROR: %+v\n", err)

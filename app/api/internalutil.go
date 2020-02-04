@@ -1,21 +1,23 @@
 package api
 
 import (
-	"jongme/app/errs"
+	"errors"
 
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func withID(ctx *fasthttp.RequestCtx, name string, f func(id primitive.ObjectID) error) error {
+func withID(ctx *fasthttp.RequestCtx, name string) (primitive.ObjectID, error) {
 	// param := ctx.URI().QueryArgs().Peek(name)
-	param := ctx.UserValue(name)
+	param, ok := ctx.UserValue(name).(string)
 
-	id, err := primitive.ObjectIDFromHex(param.(string))
-
-	if err == nil {
-		return f(id)
-	} else {
-		return errs.NewHTTPError(err, 400, "Bad request: 'invalid id.")
+	if !ok {
+		return primitive.NewObjectID(), errors.New("Type assertion failed")
 	}
+
+	id, err := primitive.ObjectIDFromHex(param)
+	if err != nil {
+		return id, err
+	}
+	return id, nil
 }

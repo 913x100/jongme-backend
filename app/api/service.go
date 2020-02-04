@@ -39,17 +39,6 @@ type updateServiceRequest struct {
 	EndTime           int64              `json:"end_time"`
 }
 
-type serviceResponse struct {
-	ID                primitive.ObjectID `json:"_id"`
-	PageID            string             `json:"page_id"`
-	Name              string             `json:"name"`
-	Type              string             `json:"type"`
-	Quantity          int64              `json:"quantity"`
-	MinimumTimeLength int64              `json:"minimum_time_length"`
-	StartTime         int64              `json:"start_time"`
-	EndTime           int64              `json:"end_time"`
-}
-
 type ServiceAPI struct {
 	DB       ServiceDatabase
 	Validate *validator.Validate
@@ -120,7 +109,7 @@ func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) error {
 	}
 
 	limit := end - start
-	users, err := s.DB.GetServices(
+	services, err := s.DB.GetServices(
 		&model.Paging{
 			Skip:      &start,
 			Limit:     &limit,
@@ -133,7 +122,7 @@ func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) error {
 		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}
 	ctx.SetStatusCode(fasthttp.StatusOK)
-	json.NewEncoder(ctx).Encode(users)
+	json.NewEncoder(ctx).Encode(services)
 	return nil
 }
 
@@ -162,13 +151,17 @@ func (s *ServiceAPI) UpdateServiceByID(ctx *fasthttp.RequestCtx) error {
 		StartTime:         input.StartTime,
 		EndTime:           input.EndTime,
 	}
+
+	_, err := withID(ctx, "id")
+	if err != nil {
+		return errs.NewHTTPError(err, 400, "Bad request: 'invalid id.")
+	}
+
+	if err := s.DB.UpdateService(&service); err != nil {
+		return errs.NewHTTPError(err, 404, "service down not exists.")
+	}
 	ctx.SetStatusCode(fasthttp.StatusOK)
-	return withID(ctx, "id", func(id primitive.ObjectID) error {
-		if err := s.DB.UpdateService(&service); err != nil {
-			return errs.NewHTTPError(err, 404, "service down not exists.")
-		}
-		return nil
-	})
+	return nil
 }
 
 func (s *ServiceAPI) DeleteServiceByID(ctx *fasthttp.RequestCtx) error {
@@ -176,12 +169,14 @@ func (s *ServiceAPI) DeleteServiceByID(ctx *fasthttp.RequestCtx) error {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
 
-	withID(ctx, "_id", func(id primitive.ObjectID) error {
-		if err := s.DB.DeleteServiceByID(id); err != nil {
-			return errs.NewHTTPError(err, 500, "Internal server error.")
-		}
-		return nil
-	})
+	id, err := withID(ctx, "id")
+	if err != nil {
+		return errs.NewHTTPError(err, 400, "Bad request: 'invalid id.")
+	}
+
+	if err := s.DB.DeleteServiceByID(id); err != nil {
+		return errs.NewHTTPError(err, 500, "Internal server error.")
+	}
 
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	return nil

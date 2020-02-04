@@ -28,6 +28,7 @@ var (
 	TokenIssuer              = os.Getenv("ISSUER")
 	TokenSecret              = []byte(os.Getenv("JWT_SECRET"))
 	Environment              = os.Getenv("APP_ENV")
+	ValidationToken          = os.Getenv("VALIDATION_TOKEN")
 
 	AuthService = os.Getenv("SERVER_URL")
 

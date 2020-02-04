@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"jongme/app/config"
+	"jongme/app/httputil"
 	"jongme/app/network"
 )
 
@@ -10,38 +11,38 @@ type FB struct {
 	Client network.Client
 }
 
-func (f *FB) GetPageAccessToken(pageID, userToken string) (res network.Response) {
-	fmt.Println("PageID: ", pageID, "UserToken : ", userToken)
-	uri := config.FacebookAPIEndpoint + pageID + "?fields=id,name,access_token&access_token=" + userToken
-	res = f.Client.Get(uri)
-	checkFBErrors(&res)
-	fmt.Println(res)
-	return
-}
+// func (f *FB) GetPageAccessToken(pageID, userToken string) (res network.Response) {
+// 	fmt.Println("PageID: ", pageID, "UserToken : ", userToken)
+// 	uri := config.FacebookAPIEndpoint + pageID + "?fields=id,name,access_token&access_token=" + userToken
+// 	res = f.Client.Get(uri)
+// 	checkFBErrors(&res)
+// 	fmt.Println(res)
+// 	return
+// }
 
-func (f *FB) OauthWithCode(code string) (res network.Response) {
+func (f FB) OauthWithCode(code string) (res network.Response) {
 	uri := config.FacebookAPIEndpoint + "oauth/access_token?client_id=" + config.AppID + "&client_secret=" + config.AppSecret + "&redirect_uri=" + config.WebURL + "/auth&code=" + string(code)
 	res = f.Client.Get(uri)
 	// fmt.Println(res)
 	return
 }
 
-func (f *FB) GetLongLiveToken(accessToken string) (res network.Response) {
+func (f FB) GetLongLiveToken(accessToken string) (res network.Response) {
 	uri := config.FacebookAPIEndpoint + "oauth/access_token?grant_type=fb_exchange_token&client_id=" + config.AppID + "&client_secret=" + config.AppSecret + "&fb_exchange_token=" + accessToken
 	res = f.Client.Get(uri)
 	// fmt.Println(res)
 	return
 }
 
-func (f *FB) CheckPermission(userToken string) network.Response {
-	uri := config.FacebookAPIEndpoint + "me/permissions?access_token=" + userToken
-	res := f.Client.Get(uri)
-	// fmt.Println(res)
-	checkFBErrors(&res)
-	return res
-}
+// func (f *FB) CheckPermission(userToken string) network.Response {
+// 	uri := config.FacebookAPIEndpoint + "me/permissions?access_token=" + userToken
+// 	res := f.Client.Get(uri)
+// 	// fmt.Println(res)
+// 	checkFBErrors(&res)
+// 	return res
+// }
 
-func (f *FB) GetUserInfo(userToken string) (res network.Response) {
+func (f FB) GetUserInfo(userToken string) (res network.Response) {
 	uri := config.FacebookAPIEndpoint + "me?fields=id,name,email,picture.type(large)&access_token=" + userToken
 	res = f.Client.Get(uri)
 	// fmt.Println(res)
@@ -52,57 +53,73 @@ func (f *FB) GetUserInfo(userToken string) (res network.Response) {
 // func (f *FB) GetPages(userToken string) (res network.Response) {
 // 	uri := config.FacebookAPIEndpoint + "me/accounts?fields=id,name,picture.type(large)&access_token=" + userToken
 // 	res = f.Client.Get(uri)
-// 	fmt.Println(res)
+// 	// fmt.Println(res)
 // 	checkFBErrors(&res)
 // 	return
 // }
 
-// func (f *FB) GetPages2(userID, userToken string) (res network.Response) {
+func (f *FB) GetPages(userToken string) (res network.Response) {
+	uri := config.FacebookAPIEndpoint + "me/accounts?fields=id,name&access_token=" + userToken
+	res = f.Client.Get(uri)
+	// res, _ := httputil.GetJSON(uri)
+	return res
+}
+
+func (f *FB) GetPageToken(pageID, userToken string) (res network.Response) {
+	// fmt.Println(pageID, userToken)
+
+	uri := config.FacebookAPIEndpoint + pageID + "?fields=id,name,access_token&access_token=" + userToken
+	res = f.Client.Get(uri)
+	// res, _ := httputil.GetJSON(uri)
+	return res
+}
+
+func (f *FB) postMessage(data interface{}, pageAccessToken string) []byte {
+	uri := config.FacebookAPIEndpoint + "me/messages&access_token=" + pageAccessToken
+
+	res, _ := httputil.PostJSON(uri, data)
+
+	return res
+}
+
+// func (f *FB) GetPageWithToken(userToken string) (res network.Response) {
 // 	uri := config.FacebookAPIEndpoint + "me/accounts?fields=id,name,access_token,picture.type(large)&access_token=" + userToken
 // 	res = f.Client.Get(uri)
-// 	fmt.Println(res)
+// 	checkFBErrors(&res)
+
+// 	return
+// }
+
+// func (f *FB) SubscribeWebhook(pageID, pageAccessToken string) (res network.Response) {
+// 	uri := config.FacebookAPIEndpoint + pageID + "/subscribed_apps?access_token=" + pageAccessToken + "&subscribed_fields=" + "feed,messages,messaging_postbacks,message_deliveries,message_reads,message_deliveries,messaging_referrals"
+// 	res = f.Client.Post(nil, uri)
+// 	// fmt.Println(res)
 // 	checkFBErrors(&res)
 // 	return
 // }
 
-func (f *FB) GetPageWithToken(userToken string) (res network.Response) {
-	uri := config.FacebookAPIEndpoint + "me/accounts?fields=id,name,access_token,picture.type(large)&access_token=" + userToken
-	res = f.Client.Get(uri)
-	checkFBErrors(&res)
+// func (f *FB) CheckWebhookSubscription(pageID, pageAccessToken string) (res network.Response) {
+// 	uri := config.FacebookAPIEndpoint + pageID + "/subscribed_apps?access_token=" + pageAccessToken
+// 	res = f.Client.Get(uri)
+// 	// fmt.Println(res)
+// 	return
+// }
 
-	return
-}
+// func (f *FB) RemoveWebhookSuscription(pageID, appAccessToken string) (res network.Response) {
+// 	uri := config.FacebookAPIEndpoint + pageID + "/subscribed_apps?access_token" + appAccessToken
+// 	// res = f.Client.DELETE(uri) // implemnt DELETE
+// 	fmt.Println(uri)
+// 	return
+// }
 
-func (f *FB) SubscribeWebhook(pageID, pageAccessToken string) (res network.Response) {
-	uri := config.FacebookAPIEndpoint + pageID + "/subscribed_apps?access_token=" + pageAccessToken + "&subscribed_fields=" + "feed,messages,messaging_postbacks,message_deliveries,message_reads,message_deliveries,messaging_referrals"
-	res = f.Client.Post(nil, uri)
-	// fmt.Println(res)
-	checkFBErrors(&res)
-	return
-}
-
-func (f *FB) CheckWebhookSubscription(pageID, pageAccessToken string) (res network.Response) {
-	uri := config.FacebookAPIEndpoint + pageID + "/subscribed_apps?access_token=" + pageAccessToken
-	res = f.Client.Get(uri)
-	// fmt.Println(res)
-	return
-}
-
-func (f *FB) RemoveWebhookSuscription(pageID, appAccessToken string) (res network.Response) {
-	uri := config.FacebookAPIEndpoint + pageID + "/subscribed_apps?access_token" + appAccessToken
-	// res = f.Client.DELETE(uri) // implemnt DELETE
-	fmt.Println(uri)
-	return
-}
-
-func (f *FB) GetStartedPayload(pageAccessToken string) (res network.Response) {
-	uri := config.FacebookAPIEndpoint + "/me/messenger_profile?access_token=" + pageAccessToken
-	body := map[string]interface{}{
-		"get_started": map[string]interface{}{"payload": `{ "stepid":"", "flowid":"", "payload":"getstarted"}`},
-	}
-	res = f.Client.Post(body, uri)
-	return
-}
+// func (f *FB) GetStartedPayload(pageAccessToken string) (res network.Response) {
+// 	uri := config.FacebookAPIEndpoint + "/me/messenger_profile?access_token=" + pageAccessToken
+// 	body := map[string]interface{}{
+// 		"get_started": map[string]interface{}{"payload": `{ "stepid":"", "flowid":"", "payload":"getstarted"}`},
+// 	}
+// 	res = f.Client.Post(body, uri)
+// 	return
+// }
 
 func checkFBErrors(res *network.Response) {
 	if res.Err != nil {

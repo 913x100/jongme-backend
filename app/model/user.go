@@ -14,6 +14,12 @@ type User struct {
 	CreatedOn   time.Time          `bson:"created_on" json:"created_on"`
 }
 
+// type OpeningHours struct {
+// 	DayOfWeek int64 `bson:"day" json:"day"`
+// 	Open      int64 `bson:"open" json:"open"`
+// 	Close     int64 `bson:"close" json:"close"`
+// }
+
 func (u *User) New() *User {
 	return &User{
 		ID:          primitive.NewObjectID(),

@@ -29,6 +29,7 @@ services:
       - APP_ID=${FBAPIKEY}
       - APP_SECRET=${FBAPISECRET}
       - WEB_URL=${WEBURL}
+      - VALIDATION_TOKEN=my_jongme_token
     ports:
       - "8083:8083"
     expose:
