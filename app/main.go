@@ -24,6 +24,11 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+	// client := &fasthttp.Client{MaxConnsPerHost: 2048}
+	// fasthttpClient := &fasthttp_client.FastHTTPClient{client}
+
+	// bot := fbbot.New(fasthttpClient)
+
 	// router := fasthttprouter.New()
 	r := routers.Create(db)
 	cor := cors.New(cors.Options{

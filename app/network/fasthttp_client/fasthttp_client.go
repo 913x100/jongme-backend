@@ -120,7 +120,7 @@ func do(req *fasthttp.Request, resp *fasthttp.Response, c *fasthttp.Client) (r n
 	// 	fmt.Printf("ERROR: %+v\n", err)
 	// 	return network.Response{Response: nil, Err: fmt.Errorf("%+v", err)}
 	// }
-	fmt.Println("Response: %s\n", string(resp.Body()))
+	// fmt.Println("Response: %s\n", string(resp.Body()))
 
 	return network.Response{Response: response, Err: nil}
 }
@@ -129,7 +129,7 @@ func getJSONRequest(url string, method string) (req *fasthttp.Request) {
 	req = fasthttp.AcquireRequest()
 	req.SetRequestURI(url)
 	req.Header.SetMethod(method)
-	req.Header.SetContentType("application/json")
+	req.Header.SetContentType("application/json; charset=utf-8")
 	return
 }
 

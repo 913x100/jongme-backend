@@ -37,3 +37,8 @@ func (s *Service) New() *Service {
 		CreatedOn:         time.Now(),
 	}
 }
+
+type AggregateService struct {
+	Qty      int64      `json:"qty"`
+	Services []*Service `json:"services"`
+}

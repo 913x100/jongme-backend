@@ -11,6 +11,7 @@ type User struct {
 	UserID      string             `bson:"user_id" json:"user_id"`
 	AccessToken string             `bson:"access_token" json:"access_token"`
 	Name        string             `bson:"name" json:"name"`
+	UpdatedOn   time.Time          `bson:"updated_on" json:"updated_on"`
 	CreatedOn   time.Time          `bson:"created_on" json:"created_on"`
 }
 
@@ -26,6 +27,7 @@ func (u *User) New() *User {
 		UserID:      u.UserID,
 		AccessToken: u.AccessToken,
 		Name:        u.Name,
+		UpdatedOn:   u.UpdatedOn,
 		CreatedOn:   time.Now(),
 	}
 }

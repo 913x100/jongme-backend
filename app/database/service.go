@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"jongme/app/model"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,26 +42,56 @@ func (m *Mongo) GetServices(paging *model.Paging) ([]*model.Service, error) {
 	return services, nil
 }
 
-func (m *Mongo) UpdateService(service *model.Service) error {
-	opts := options.FindOneAndReplace()
-	filter := bson.D{{"_id", service.ID}}
-	fmt.Println(service)
-	result := m.DB.Collection("services").
-		FindOneAndReplace(context.Background(),
-			filter,
-			service,
-			opts,
-		)
+func (m *Mongo) UpdateService(service *model.Service) (*model.Service, error) {
+	doc, err := toDoc(service)
+	//check error
 
-	service = new(model.Service)
-	if err := result.Decode(service); err != nil {
-		return err
+	filter := bson.D{{"_id", service.ID}}
+	update := bson.M{
+		"$set": doc,
 	}
-	return nil
+
+	_, err = m.DB.Collection("pages").UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+
+	return service, err
+
 }
 
 func (m *Mongo) DeleteServiceByID(id primitive.ObjectID) error {
 	_, err := m.DB.Collection("services").DeleteOne(context.Background(), bson.D{{Key: "_id", Value: id}})
 
 	return err
+}
+
+func (m *Mongo) GetServicesAccordingFilter(query []bson.M) ([]*model.Service, error) {
+
+	filter := bson.M{}
+	if query != nil {
+		if len(query) > 0 {
+			filter = bson.M{"$and": query}
+		}
+	}
+	data, err := m.DB.Collection("services").Find(
+		context.Background(),
+		filter,
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	defer data.Close(context.Background())
+
+	var result []*model.Service
+	for data.Next(context.Background()) {
+		l := &model.Service{}
+		err = data.Decode(&l)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, l)
+	}
+	return result, nil
 }

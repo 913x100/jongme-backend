@@ -7,7 +7,6 @@ import (
 	"jongme/app/model"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // var collection string = "users"
@@ -17,36 +16,56 @@ func (m *Mongo) CreateUser(user *model.User) error {
 	// 				.FindOneAndReplace()
 	// 				.SetUpsert(true)
 	// 				.SetSort(bson.D{{"user_id", 1}})
-	upsert := true
-	opts := &options.FindOneAndReplaceOptions{
-		Upsert: &upsert,
-		Sort:   bson.D{{"user_id", 1}},
-	}
-	filter := bson.D{{"user_id", user.UserID}}
+	// upsert := true
+	// opts := &options.FindOneAndReplaceOptions{
+	// 	Upsert: &upsert,
+	// 	Sort:   bson.D{{"user_id", 1}},
+	// }
+	// filter := bson.D{{"user_id", user.UserID}}
 
-	result := m.DB.Collection("users").
-		FindOneAndReplace(context.Background(),
-			filter,
-			user,
-			opts,
-		)
-	user = new(model.User)
-	if err := result.Decode(user); err != nil {
+	// result := m.DB.Collection("users").
+	// 	FindOneAndReplace(context.Background(),
+	// 		filter,
+	// 		user,
+	// 		opts,
+	// 	)
+	// user = new(model.User)
+	// if err := result.Decode(user); err != nil {
+	// 	return err
+	// }
+	// return nil
+
+	filter := bson.D{{"user_id", user.UserID}}
+	var queryUser *model.User
+	_ = m.DB.Collection("users").FindOne(context.Background(), filter).Decode(&queryUser)
+
+	if queryUser == nil {
+		_, err := m.DB.Collection("users").InsertOne(context.Background(), user)
 		return err
 	}
-	return nil
+
+	update := bson.M{
+		"$set": bson.D{
+			{"name", user.Name},
+			{"updated_on", user.UpdatedOn},
+			{"access_token", user.AccessToken},
+		},
+	}
+	_, err := m.DB.Collection("users").UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+
+	return err
+
 }
 
-func (m *Mongo) GetUsers(paging *model.Paging) ([]*model.User, error) {
+func (m *Mongo) GetUsers() ([]*model.User, error) {
 	users := []*model.User{}
 
 	cursor, err := m.DB.Collection("users").
-		Find(context.Background(), bson.D{},
-			&options.FindOptions{
-				Skip:  paging.Skip,
-				Sort:  bson.D{bson.E{Key: paging.SortKey, Value: paging.SortVal}},
-				Limit: paging.Limit,
-			})
+		Find(context.Background(), bson.D{})
 	if err != nil {
 		return nil, err
 	}

@@ -8,15 +8,16 @@ import (
 
 type Page struct {
 	ID          primitive.ObjectID `bson:"_id" json:"_id"`
-	PageID      string             `bson:"page_id" json:"page_id"`
-	Name        string             `bson:"name" json:"name"`
-	AccessToken string             `bson:"access_token" json:"access_token"`
-	PageHours   []PageHours        `bson:"page_hours" json:"page_hours"`
-	CreatedOn   time.Time          `bson:"created_on" json:"created_on"`
+	PageID      string             `bson:"page_id" json:"page_id,omitempty"`
+	Name        string             `bson:"name" json:"name,omitempty"`
+	AccessToken string             `bson:"access_token" json:"access_token,omitempty"`
+	PageHours   []*PageHours       `bson:"page_hours" json:"page_hours,omitempty"`
+	UpdatedOn   time.Time          `bson:"updated_on" json:"updated_on,omitempty"`
+	CreatedOn   time.Time          `bson:"created_on" json:"created_on,omitempty"`
 }
 
 type PageHours struct {
-	DayOfWeek  int64 `bson:"day" json:"day"`
+	DayOfWeek  int8  `bson:"day" json:"day"`
 	Open       int64 `bson:"open" json:"open"`
 	Close      int64 `bson:"close" json:"close"`
 	IsBreak    bool  `bson:"is_break" json:"is_break"`
@@ -35,11 +36,12 @@ type PageBooking struct {
 
 func (p *Page) New() *Page {
 	return &Page{
-		ID:          primitive.NewObjectID(),
-		PageID:      p.PageID,
+		ID: p.ID,
+		// PageID:      p.PageID,
 		Name:        p.Name,
 		AccessToken: p.AccessToken,
 		PageHours:   p.PageHours,
+		UpdatedOn:   p.UpdatedOn,
 		CreatedOn:   time.Now(),
 	}
 }

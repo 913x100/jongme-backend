@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/valyala/fasthttp"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/go-playground/validator.v10"
 )
@@ -14,27 +15,26 @@ import (
 type ServiceDatabase interface {
 	CreateService(service *model.Service) error
 	GetServices(page *model.Paging) ([]*model.Service, error)
-	UpdateService(service *model.Service) error
+	// GetServicesByPage(pageID string, page *model.Paging) ([]*model.Service, error)
+	GetServicesAccordingFilter(filter []bson.M) ([]*model.Service, error)
+	UpdateService(service *model.Service) (*model.Service, error)
 	DeleteServiceByID(id primitive.ObjectID) error
 }
 
 type createServiceRequest struct {
-	PageID            string `json:"page_id" validate:"required"`
-	Name              string `json:"name" validate:"required"`
-	Type              string `json:"type"`
-	Quantity          int64  `json:"quantity"`
-	MinimumTimeLength int64  `json:"minimum_time_length"`
-	StartTime         int64  `json:"start_time"`
-	EndTime           int64  `json:"end_time"`
+	PageID string `json:"page_id" validate:"required"`
 }
 
 type updateServiceRequest struct {
-	ID                primitive.ObjectID `json:"_id" validate:"required"`
-	PageID            string             `json:"page_id" validate:"required"`
-	Name              string             `json:"name" validate:"required"`
-	Type              string             `json:"type"`
-	Quantity          int64              `json:"quantity"`
+	ID                primitive.ObjectID `json:"_id"`
+	PageID            string             `json:"page_id"`
+	IsActive          bool               `json:"is_active"`
+	Name              string             `json:"name"`
+	ImageUrl          string             `json:image_url"`
+	UnitType          string             `json:"unit_type"`
+	UnitQuantity      int64              `json:"unit_quantity"`
 	MinimumTimeLength int64              `json:"minimum_time_length"`
+	IsTimeAdjust      bool               `json:"is_time_adjust"`
 	StartTime         int64              `json:"start_time"`
 	EndTime           int64              `json:"end_time"`
 }
@@ -49,25 +49,19 @@ func (s *ServiceAPI) CreateService(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPost() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
-	input := createServiceRequest{}
+	service := model.Service{}
 
-	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
+	if err := json.Unmarshal(ctx.PostBody(), &service); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
 	}
 
-	if err := s.Validate.Struct(input); err != nil {
+	if err := s.Validate.Struct(service); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
 	}
 
-	service := model.Service{
-		PageID:            input.PageID,
-		Name:              input.Name,
-		Type:              input.Type,
-		Quantity:          input.Quantity,
-		MinimumTimeLength: input.MinimumTimeLength,
-		StartTime:         input.StartTime,
-		EndTime:           input.EndTime,
-	}
+	// service := model.Service{
+	// 	PageID: input.PageID,
+	// }
 
 	err := s.DB.CreateService(service.New())
 	if err != nil {
@@ -126,12 +120,16 @@ func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) error {
 	return nil
 }
 
+func (s *ServiceAPI) GetServicesByType() {
+
+}
+
 func (s *ServiceAPI) UpdateServiceByID(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPut() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
 
-	input := updateServiceRequest{}
+	input := model.Service{}
 
 	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
@@ -140,24 +138,14 @@ func (s *ServiceAPI) UpdateServiceByID(ctx *fasthttp.RequestCtx) error {
 	if err := s.Validate.Struct(input); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
 	}
-
-	service := model.Service{
-		ID:                input.ID,
-		PageID:            input.PageID,
-		Name:              input.Name,
-		Type:              input.Type,
-		Quantity:          input.Quantity,
-		MinimumTimeLength: input.MinimumTimeLength,
-		StartTime:         input.StartTime,
-		EndTime:           input.EndTime,
-	}
-
 	_, err := withID(ctx, "id")
 	if err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request: 'invalid id.")
 	}
 
-	if err := s.DB.UpdateService(&service); err != nil {
+	_, err = s.DB.UpdateService(&input)
+
+	if err != nil {
 		return errs.NewHTTPError(err, 404, "service down not exists.")
 	}
 	ctx.SetStatusCode(fasthttp.StatusOK)
@@ -179,5 +167,36 @@ func (s *ServiceAPI) DeleteServiceByID(ctx *fasthttp.RequestCtx) error {
 	}
 
 	ctx.SetStatusCode(fasthttp.StatusOK)
+	return nil
+}
+
+func (s *ServiceAPI) GetServicesByFilter(ctx *fasthttp.RequestCtx) error {
+	ctx.SetContentType("application/json;charset=utf-8")
+
+	pageID := string(ctx.FormValue("page_id"))
+	name := string(ctx.FormValue("name"))
+	startTime := string(ctx.FormValue("start_time"))
+	endTime := string(ctx.FormValue("end_time"))
+
+	filter := []bson.M{}
+
+	if pageID != "" {
+		filter = append(filter, bson.M{"page_id": bson.M{"$eq": pageID}})
+	}
+	if name != "" {
+		filter = append(filter, bson.M{"name": bson.M{"$eq": name}})
+	}
+	if startTime != "" {
+		filter = append(filter, bson.M{"start_time": bson.M{"$gte": startTime}})
+	}
+	if endTime != "" {
+		filter = append(filter, bson.M{"end_time": bson.M{"$lte": endTime}})
+	}
+	services, err := s.DB.GetServicesAccordingFilter(filter)
+	if err != nil {
+		return errs.NewHTTPError(err, 500, "Internal server error.")
+	}
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	json.NewEncoder(ctx).Encode(services)
 	return nil
 }
