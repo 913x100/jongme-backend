@@ -36,8 +36,8 @@ type PageBooking struct {
 
 func (p *Page) New() *Page {
 	return &Page{
-		ID: p.ID,
-		// PageID:      p.PageID,
+		ID:          primitive.NewObjectID(),
+		PageID:      p.PageID,
 		Name:        p.Name,
 		AccessToken: p.AccessToken,
 		PageHours:   p.PageHours,

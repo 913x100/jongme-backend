@@ -148,6 +148,7 @@ func Create(db *database.Mongo) *router.Router {
 	// service.GET("/", rootHandler(serviceHandler.GetServices))
 	// service.GET("/page/:id", rootHandler(serviceHandler.GetServicesByPage))
 	service.GET("/", rootHandler(serviceHandler.GetServicesByFilter))
+	service.GET("/slots/:id", rootHandler(serviceHandler.GetServicesSlots))
 	service.POST("/", rootHandler(serviceHandler.CreateService))
 	service.PUT("/:id", rootHandler(serviceHandler.UpdateServiceByID))
 	// auth.GET("/", Index)
@@ -166,6 +167,7 @@ func Create(db *database.Mongo) *router.Router {
 	booking := sv.Group("/booking")
 	booking.POST("/", rootHandler(bookingHandler.CreateBooking))
 	booking.GET("/", rootHandler(bookingHandler.GetBookingByService))
+	booking.GET("/filter", rootHandler(bookingHandler.GetBookingByFilter))
 	booking.GET("/all", rootHandler(bookingHandler.GetBookings))
 	return r
 }

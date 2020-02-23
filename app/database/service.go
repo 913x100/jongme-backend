@@ -42,6 +42,15 @@ func (m *Mongo) GetServices(paging *model.Paging) ([]*model.Service, error) {
 	return services, nil
 }
 
+func (m *Mongo) GetServiceByID(id primitive.ObjectID) (*model.Service, error) {
+	var service *model.Service
+	filter := bson.D{{"_id", id}}
+
+	err := m.DB.Collection("services").FindOne(context.Background(), filter).Decode(&service)
+
+	return service, err
+}
+
 func (m *Mongo) UpdateService(service *model.Service) (*model.Service, error) {
 	doc, err := toDoc(service)
 	//check error
@@ -51,7 +60,7 @@ func (m *Mongo) UpdateService(service *model.Service) (*model.Service, error) {
 		"$set": doc,
 	}
 
-	_, err = m.DB.Collection("pages").UpdateOne(
+	_, err = m.DB.Collection("services").UpdateOne(
 		context.Background(),
 		filter,
 		update,

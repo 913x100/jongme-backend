@@ -18,6 +18,7 @@ services:
     volumes:
       - ./app:/go/src/jongme/app
     environment:
+      - TZ=Asia/Bangkok
       - APP_ENV=development
       - PORT=8083
       - MONGO_HOST=mongo

@@ -2,9 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"jongme/app/errs"
 	"jongme/app/model"
 	"strconv"
+	"time"
 
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,6 +17,7 @@ import (
 type ServiceDatabase interface {
 	CreateService(service *model.Service) error
 	GetServices(page *model.Paging) ([]*model.Service, error)
+	GetServiceByID(id primitive.ObjectID) (*model.Service, error)
 	// GetServicesByPage(pageID string, page *model.Paging) ([]*model.Service, error)
 	GetServicesAccordingFilter(filter []bson.M) ([]*model.Service, error)
 	UpdateService(service *model.Service) (*model.Service, error)
@@ -120,10 +123,6 @@ func (s *ServiceAPI) GetServices(ctx *fasthttp.RequestCtx) error {
 	return nil
 }
 
-func (s *ServiceAPI) GetServicesByType() {
-
-}
-
 func (s *ServiceAPI) UpdateServiceByID(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPut() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
@@ -198,5 +197,47 @@ func (s *ServiceAPI) GetServicesByFilter(ctx *fasthttp.RequestCtx) error {
 	}
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	json.NewEncoder(ctx).Encode(services)
+	return nil
+}
+
+func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
+	ctx.SetContentType("application/json")
+
+	if !ctx.IsGet() {
+		return errs.NewHTTPError(nil, 405, "Method not allowed.")
+	}
+
+	id, _ := withID(ctx, "id")
+	service, err := s.DB.GetServiceByID(id)
+
+	if err != nil {
+		return errs.NewHTTPError(err, 500, "Internal server error.")
+	}
+
+	startTime, _ := time.Parse("15:04:05", service.StartTime)
+	endTime, _ := time.Parse("15:04:05", service.EndTime)
+
+	diff := int(endTime.Sub(startTime).Minutes())
+
+	numSlot := diff / service.MinimumTimeLength
+
+	var slots []string
+
+	for i := 0; i < numSlot; i++ {
+		a := startTime.Add(time.Minute * time.Duration(service.MinimumTimeLength*i))
+
+		t := fmt.Sprintf("%02d:%02d", a.Hour(), a.Minute())
+
+		slots = append(slots, t)
+	}
+
+	fmt.Println(slots)
+	// fmt.Println(startTime.Add(time.Minute * time.Duration(30)))
+
+	// fmt.Println(time.Now().Local())
+
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	json.NewEncoder(ctx).Encode(slots)
+
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 func withID(ctx *fasthttp.RequestCtx, name string) (primitive.ObjectID, error) {
 	// param := ctx.URI().QueryArgs().Peek(name)
 	param, ok := ctx.UserValue(name).(string)
-
 	if !ok {
 		return primitive.NewObjectID(), errors.New("Type assertion failed")
 	}
