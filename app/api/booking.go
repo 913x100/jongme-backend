@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"jongme/app/errs"
 	"jongme/app/model"
 
@@ -27,10 +28,12 @@ func (b *BookingAPI) CreateBooking(ctx *fasthttp.RequestCtx) error {
 	}
 	booking := model.Booking{}
 
+	fmt.Println("book")
+
 	if err := json.Unmarshal(ctx.PostBody(), &booking); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
 	}
-
+	fmt.Println(booking)
 	// if err := s.Validate.Struct(service); err != nil {
 	// 	return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
 	// }
@@ -40,6 +43,7 @@ func (b *BookingAPI) CreateBooking(ctx *fasthttp.RequestCtx) error {
 	// }
 
 	err := b.DB.CreateBooking(booking.New())
+	fmt.Println(err)
 	if err != nil {
 		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}
@@ -54,20 +58,26 @@ func (b *BookingAPI) GetBookingByService(ctx *fasthttp.RequestCtx) error {
 	}
 
 	serviceID := string(ctx.FormValue("service_id"))
-	bookingDate := string(ctx.FormValue("booking_date"))
+	year := string(ctx.FormValue("year"))
+	month := string(ctx.FormValue("month"))
+	day := string(ctx.FormValue("day"))
 
 	query := []bson.M{
 		{"$match": bson.D{
 			{"service_id", serviceID},
-			{"booking_date", bookingDate},
+			{"year", year},
+			{"month", month},
+			{"day", day},
 		}},
-		{"$group": bson.M{"_id": "$booking_time",
-			"count":        bson.M{"$sum": 1},
-			"page_id":      bson.M{"$first": "$page_id"},
-			"service_id":   bson.M{"$first": "$service_id"},
-			"status":       bson.M{"$first": "$status"},
-			"booking_date": bson.M{"$first": "$booking_date"},
-			"users":        bson.M{"$addToSet": "$user_id"},
+		{"$group": bson.M{"_id": "$time",
+			"count":      bson.M{"$sum": 1},
+			"page_id":    bson.M{"$first": "$page_id"},
+			"service_id": bson.M{"$first": "$service_id"},
+			"year":       bson.M{"$first": "$year"},
+			"month":      bson.M{"$first": "$month"},
+			"day":        bson.M{"$first": "$day"},
+			"status":     bson.M{"$first": "$status"},
+			"users":      bson.M{"$addToSet": "$user_id"},
 		}},
 	}
 

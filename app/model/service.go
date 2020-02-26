@@ -18,7 +18,6 @@ type Service struct {
 	IsTimeAdjust      bool               `bson:"is_time_adjust" json:"is_time_adjust"`
 	StartTime         string             `bson:"start_time" json:"start_time"`
 	EndTime           string             `bson:"end_time" json:"end_time"`
-	NumSlots          int                `bson:"num_slots" json:"num_slots"`
 	CreatedOn         time.Time          `bson:"created_on" json:"created_on"`
 }
 
@@ -35,7 +34,6 @@ func (s *Service) New() *Service {
 		IsTimeAdjust:      s.IsTimeAdjust,
 		StartTime:         s.StartTime,
 		EndTime:           s.EndTime,
-		NumSlots:          s.NumSlots,
 		CreatedOn:         time.Now(),
 	}
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"jongme/app/config"
 	"jongme/app/errs"
@@ -11,13 +12,14 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/valyala/fasthttp"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PageDatabase interface {
-	GetUserByID(id string) (*model.User, error)
-	GetUser(t interface{}) (*model.User, error)
+	GetPageByID(id string) (*model.Page, error)
 	CreatePage(page *model.Page) (*model.Page, error)
 	GetPages() ([]*model.Page, error)
+	UpdatePage(id string, page *model.Page) (*model.Page, error)
 }
 
 type PageFb interface {
@@ -35,48 +37,9 @@ type getUserRequest struct {
 	UserID string `json:"user_id"`
 }
 
-// type createPageRequest struct {
-// 	Name        string `json:"name"`
-// 	AccessToken string `json:"access_token"`
-// 	PageID      string `json:"id"`
-// }
-
 type getPageRequest struct {
 	UserID string `json:"user_id"`
 	PageID string `json:"page_id"`
-}
-
-func (p *PageAPI) GetPagesByFacebookID(ctx *fasthttp.RequestCtx) error {
-	ctx.SetContentType("application/json")
-
-	if !ctx.IsGet() {
-		return errs.NewHTTPError(nil, 405, "Method not allowed.")
-	}
-
-	id := ctx.UserValue("id")
-	if id == "" {
-		return errs.NewHTTPError(nil, 400, "Bad request: 'invalid FB id.")
-	}
-
-	req := getUserRequest{UserID: id.(string)}
-
-	user, err := p.DB.GetUser(req)
-
-	if err != nil {
-		return errs.NewHTTPError(err, 500, "Internal server error.")
-	}
-	user_token := user.AccessToken
-
-	resp := p.FB.GetPages(user_token)
-
-	pages := resp.Response
-	// err = json.Unmarshal(resp.Response, &pages)
-
-	// tmp := pages["data"].([]interface{})
-	e, _ := json.Marshal(pages["data"])
-	ctx.SetStatusCode(fasthttp.StatusOK)
-	ctx.Write(e)
-	return nil
 }
 
 func (p *PageAPI) GetPages(ctx *fasthttp.RequestCtx) error {
@@ -85,7 +48,7 @@ func (p *PageAPI) GetPages(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsGet() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
-	
+
 	pages, err := p.DB.GetPages()
 
 	if err != nil {
@@ -93,6 +56,51 @@ func (p *PageAPI) GetPages(ctx *fasthttp.RequestCtx) error {
 	}
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	json.NewEncoder(ctx).Encode(pages)
+	return nil
+}
+
+func (p *PageAPI) GetPageByID(ctx *fasthttp.RequestCtx) error {
+	ctx.SetContentType("application/json;charset=utf-8")
+
+	if !ctx.IsGet() {
+		return errs.NewHTTPError(nil, 405, "Method not allowed.")
+	}
+
+	pageID := ctx.UserValue("id").(string)
+	fmt.Println(pageID)
+
+	page, err := p.DB.GetPageByID(pageID)
+
+	type output struct {
+		ID     primitive.ObjectID `son:"_id"`
+		PageID string             `json:"page_id,omitempty"`
+		Name   string             `json:"name,omitempty"`
+		// PageHours []*model.PageHours `json:"page_hours,omitempty"`
+		StartTime string    `json:"start_time"`
+		EndTime   string    `json:"end_time"`
+		IsActive  bool      `json:"is_active"`
+		IsBreak   bool      `json:"is_break"`
+		UpdatedOn time.Time `json:"updated_on,omitempty"`
+		CreatedOn time.Time `json:"created_on,omitempty"`
+	}
+
+	pageOutput := &output{
+		ID:        page.ID,
+		PageID:    page.PageID,
+		Name:      page.Name,
+		StartTime: page.StartTime,
+		EndTime:   page.EndTime,
+		// PageHours: page.PageHours,
+		IsActive:  page.IsActive,
+		IsBreak:   page.IsBreak,
+		UpdatedOn: page.UpdatedOn,
+	}
+
+	if err != nil {
+		return errs.NewHTTPError(err, 500, "Internal server error.")
+	}
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	json.NewEncoder(ctx).Encode(pageOutput)
 	return nil
 }
 
@@ -120,5 +128,27 @@ func (p *PageAPI) GetExpireToken(ctx *fasthttp.RequestCtx) error {
 func (p *PageAPI) GetExpirePage(ctx *fasthttp.RequestCtx) error {
 
 	ctx.Write([]byte("Hi"))
+	return nil
+}
+
+func (p *PageAPI) UpdatePage(ctx *fasthttp.RequestCtx) error {
+	if !ctx.IsPut() {
+		return errs.NewHTTPError(nil, 405, "Method not allowed.")
+	}
+
+	input := model.Page{}
+
+	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
+		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
+	}
+
+	pageID := ctx.UserValue("id").(string)
+
+	_, err := p.DB.UpdatePage(pageID, &input)
+
+	if err != nil {
+		return errs.NewHTTPError(err, 404, "service down not exists.")
+	}
+	ctx.SetStatusCode(fasthttp.StatusOK)
 	return nil
 }

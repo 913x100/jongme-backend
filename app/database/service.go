@@ -11,9 +11,12 @@ import (
 
 // var collection string = "services"
 
-func (m *Mongo) CreateService(service *model.Service) error {
+func (m *Mongo) CreateService(service *model.Service) (*model.Service, error) {
 	_, err := m.DB.Collection("services").InsertOne(context.Background(), service)
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return service, err
 }
 
 func (m *Mongo) GetServices(paging *model.Paging) ([]*model.Service, error) {

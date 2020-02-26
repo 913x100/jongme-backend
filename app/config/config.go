@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -29,9 +28,4 @@ var (
 	TokenSecret              = []byte(os.Getenv("JWT_SECRET"))
 	Environment              = os.Getenv("APP_ENV")
 	ValidationToken          = os.Getenv("VALIDATION_TOKEN")
-
-	AuthService = os.Getenv("SERVER_URL")
-
-	UjungFeedWebhook    = fmt.Sprintf("http://localhost:8083/ujung/webhook/feed")
-	UjungMessageWebhook = fmt.Sprintf("http://localhost:8083/ujung/webhook/message")
 )

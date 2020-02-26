@@ -209,8 +209,8 @@ func (a *Auth) SelectPage(ctx *fasthttp.RequestCtx) error {
 	menu := fbbot.NewMenu()
 
 	menu.AddMenuItems(
-		fbbot.NewPostbackMenuItem("Make an appointment", fmt.Sprintf(`{ "step_id":%d, "page_id":"%s"}`, 1, page.PageID)),
-		fbbot.NewPostbackMenuItem("Cancel an appointment", fmt.Sprintf(`{ "step_id":%d, "page_id":"%s"}`, -1, page.PageID)),
+		fbbot.NewPostbackMenuItem("จองบริการ", fmt.Sprintf(`{ "step_id":%d, "page_id":"%s"}`, 1, page.PageID)),
+		fbbot.NewPostbackMenuItem("ยกเลิกการจอง", fmt.Sprintf(`{ "step_id":%d, "page_id":"%s"}`, -1, page.PageID)),
 	)
 	result = a.FB.AddPersistentMenus(page.AccessToken, menu)
 

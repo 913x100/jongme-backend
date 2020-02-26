@@ -95,7 +95,7 @@ func (f *FbAPI) Process(r fbbot.User, payload Payload) {
 		break
 	case 2:
 		fmt.Println(2)
-		message := f.step2(payload.PageID)
+		message := f.step2(payload.PageID, payload.ServiceID, r.ID)
 		f.Send(r, page.AccessToken, message)
 		break
 	}
@@ -130,7 +130,7 @@ func (f *FbAPI) step1(pageID, userID string) interface{} {
 
 	services, _ := f.DB.GetServicesAccordingFilter(filter)
 
-	message := fbbot.NewQuickRepliesMessage("Which services do you want?")
+	message := fbbot.NewQuickRepliesMessage("คุณต้องการจองบริการใด?")
 	for _, service := range services {
 		message.AddQuickRepliesItems(
 			fbbot.NewQuickRepliesText(service.Name,
@@ -140,8 +140,9 @@ func (f *FbAPI) step1(pageID, userID string) interface{} {
 	return message
 }
 
-func (f *FbAPI) step2(pageID string) interface{} {
-	message := fbbot.NewButtonMessage("Please select date and time")
-	message.AddWebURLButton("Jongme", "https://bit.ly/3bIWNyP")
+func (f *FbAPI) step2(pageID, serviceID, userID string) interface{} {
+	message := fbbot.NewButtonMessage("กรุณาเลือกวันและเวลา")
+
+	message.AddWebURLButton("Jongme", fmt.Sprintf("%s/booking/%s/%s/%s", config.WebURL, pageID, serviceID, userID))
 	return message
 }

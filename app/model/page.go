@@ -11,9 +11,13 @@ type Page struct {
 	PageID      string             `bson:"page_id" json:"page_id,omitempty"`
 	Name        string             `bson:"name" json:"name,omitempty"`
 	AccessToken string             `bson:"access_token" json:"access_token,omitempty"`
-	PageHours   []*PageHours       `bson:"page_hours" json:"page_hours,omitempty"`
-	UpdatedOn   time.Time          `bson:"updated_on" json:"updated_on,omitempty"`
-	CreatedOn   time.Time          `bson:"created_on" json:"created_on,omitempty"`
+	// PageHours   []*PageHours       `bson:"page_hours" json:"page_hours"`
+	StartTime string    `bson:"start_time" json:"start_time"`
+	EndTime   string    `bson:"end_time" json:"end_time"`
+	IsActive  bool      `bson:"is_active" json:"is_active"`
+	IsBreak   bool      `bson:"is_break" json:"is_break"`
+	UpdatedOn time.Time `bson:"updated_on" json:"updated_on,omitempty"`
+	CreatedOn time.Time `bson:"created_on" json:"created_on,omitempty"`
 }
 
 type PageHours struct {
@@ -23,6 +27,13 @@ type PageHours struct {
 	IsBreak    bool  `bson:"is_break" json:"is_break"`
 	BreakStart int64 `bson:"break_start" json:"break_start"`
 	BreakEnd   int64 `bson:"break_end" json:"break_end"`
+}
+
+type UpdatePage struct {
+	AccessToken string       `bson:"access_token" json:"access_token,omitempty"`
+	PageHours   []*PageHours `bson:"page_hours" json:"page_hours,omitempty"`
+	UpdatedOn   time.Time    `bson:"updated_on" json:"updated_on,omitempty"`
+	CreatedOn   time.Time    `bson:"created_on" json:"created_on,omitempty"`
 }
 
 type PageBooking struct {
@@ -40,9 +51,13 @@ func (p *Page) New() *Page {
 		PageID:      p.PageID,
 		Name:        p.Name,
 		AccessToken: p.AccessToken,
-		PageHours:   p.PageHours,
-		UpdatedOn:   p.UpdatedOn,
-		CreatedOn:   time.Now(),
+		// PageHours:   p.PageHours,
+		StartTime: p.StartTime,
+		EndTime:   p.EndTime,
+		IsActive:  p.IsActive,
+		IsBreak:   p.IsBreak,
+		UpdatedOn: p.UpdatedOn,
+		CreatedOn: time.Now(),
 	}
 }
 

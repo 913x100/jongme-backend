@@ -15,7 +15,7 @@ import (
 )
 
 type ServiceDatabase interface {
-	CreateService(service *model.Service) error
+	CreateService(service *model.Service) (*model.Service, error)
 	GetServices(page *model.Paging) ([]*model.Service, error)
 	GetServiceByID(id primitive.ObjectID) (*model.Service, error)
 	// GetServicesByPage(pageID string, page *model.Paging) ([]*model.Service, error)
@@ -52,25 +52,25 @@ func (s *ServiceAPI) CreateService(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPost() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
-	service := model.Service{}
+	fmt.Println("Create")
+	input := model.Service{}
 
-	if err := json.Unmarshal(ctx.PostBody(), &service); err != nil {
+	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
 	}
 
-	if err := s.Validate.Struct(service); err != nil {
-		return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
-	}
-
-	// service := model.Service{
-	// 	PageID: input.PageID,
+	// if err := s.Validate.Struct(input); err != nil {
+	// 	return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
 	// }
 
-	err := s.DB.CreateService(service.New())
+	service, err := s.DB.CreateService(input.New())
 	if err != nil {
+		fmt.Println(err)
 		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}
+
 	ctx.SetStatusCode(fasthttp.StatusCreated)
+	json.NewEncoder(ctx).Encode(service)
 	return nil
 }
 
@@ -127,16 +127,16 @@ func (s *ServiceAPI) UpdateServiceByID(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPut() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
-
+	// fmt.Println("update")
 	input := model.Service{}
 
 	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
 	}
 
-	if err := s.Validate.Struct(input); err != nil {
-		return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
-	}
+	// if err := s.Validate.Struct(input); err != nil {
+	// 	return errs.NewHTTPError(err, 400, "Bad request : validation failed.")
+	// }
 	_, err := withID(ctx, "id")
 	if err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request: 'invalid id.")
@@ -172,6 +172,7 @@ func (s *ServiceAPI) DeleteServiceByID(ctx *fasthttp.RequestCtx) error {
 func (s *ServiceAPI) GetServicesByFilter(ctx *fasthttp.RequestCtx) error {
 	ctx.SetContentType("application/json;charset=utf-8")
 
+	ID := string(ctx.FormValue("_id"))
 	pageID := string(ctx.FormValue("page_id"))
 	name := string(ctx.FormValue("name"))
 	startTime := string(ctx.FormValue("start_time"))
@@ -179,6 +180,10 @@ func (s *ServiceAPI) GetServicesByFilter(ctx *fasthttp.RequestCtx) error {
 
 	filter := []bson.M{}
 
+	if ID != "" {
+		id, _ := primitive.ObjectIDFromHex(ID)
+		filter = append(filter, bson.M{"_id": bson.M{"$eq": id}})
+	}
 	if pageID != "" {
 		filter = append(filter, bson.M{"page_id": bson.M{"$eq": pageID}})
 	}
@@ -217,6 +222,8 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 	startTime, _ := time.Parse("15:04:05", service.StartTime)
 	endTime, _ := time.Parse("15:04:05", service.EndTime)
 
+	fmt.Println(startTime, endTime)
+
 	diff := int(endTime.Sub(startTime).Minutes())
 
 	numSlot := diff / service.MinimumTimeLength
@@ -226,7 +233,7 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 	for i := 0; i < numSlot; i++ {
 		a := startTime.Add(time.Minute * time.Duration(service.MinimumTimeLength*i))
 
-		t := fmt.Sprintf("%02d:%02d", a.Hour(), a.Minute())
+		t := fmt.Sprintf("%02d:%02d:%02d", a.Hour(), a.Minute(), a.Second())
 
 		slots = append(slots, t)
 	}

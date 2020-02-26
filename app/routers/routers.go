@@ -141,7 +141,6 @@ func Create(db *database.Mongo) *router.Router {
 
 	user := sv.Group("/user")
 	user.GET("/", userHandler.GetUsers)
-	// user.GET("/:id/fb", rootHandler(userHandler.GetUser))
 	user.GET("/:id", rootHandler(userHandler.GetUserByID))
 
 	service := sv.Group("/service")
@@ -151,13 +150,16 @@ func Create(db *database.Mongo) *router.Router {
 	service.GET("/slots/:id", rootHandler(serviceHandler.GetServicesSlots))
 	service.POST("/", rootHandler(serviceHandler.CreateService))
 	service.PUT("/:id", rootHandler(serviceHandler.UpdateServiceByID))
+	service.DELETE("/:id", rootHandler(serviceHandler.DeleteServiceByID))
 	// auth.GET("/", Index)
 
 	page := sv.Group("/page")
 	// page.POST("/", rootHandler(pageHandler.CreatePage))
 	page.GET("/", rootHandler(pageHandler.GetPages))
-	page.GET("/token", rootHandler(pageHandler.GetExpireToken))
-	page.GET("/expire/:page_token", rootHandler(isExpired(pageHandler.GetExpirePage)))
+	page.GET("/:id", rootHandler(pageHandler.GetPageByID))
+	// page.GET("/token", rootHandler(pageHandler.GetExpireToken))
+	// page.GET("/expire/:page_token", rootHandler(isExpired(pageHandler.GetExpirePage)))
+	page.PUT("/:id", rootHandler(pageHandler.UpdatePage))
 	// page.GET("/:id/id", rootHandler(pageHandler.GetPagesByFacebookID))
 
 	facebook := sv.Group("/fb")
@@ -168,6 +170,5 @@ func Create(db *database.Mongo) *router.Router {
 	booking.POST("/", rootHandler(bookingHandler.CreateBooking))
 	booking.GET("/", rootHandler(bookingHandler.GetBookingByService))
 	booking.GET("/filter", rootHandler(bookingHandler.GetBookingByFilter))
-	booking.GET("/all", rootHandler(bookingHandler.GetBookings))
 	return r
 }
