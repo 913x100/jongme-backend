@@ -16,6 +16,8 @@ type Booking struct {
 	Month     string             `bson:"month" json:"month"`
 	Day       string             `bson:"day" json:"day"`
 	Time      string             `bson:"time" json:"time"`
+	Name      string             `bson:"name" json:"name"`
+	Username  string             `bson:"username" json:"username"`
 	Phone     string             `bson:"phone" json:"phone"`
 	CreatedOn time.Time          `bson:"created_on" json:"created_on"`
 }
@@ -36,6 +38,9 @@ func (b *Booking) New() *Booking {
 		Day:       b.Day,
 		Time:      b.Time,
 		Status:    b.Status,
+		Name:      b.Name,
+		Username:  b.Username,
+		Phone:     b.Phone,
 		// Time:      b.Time,
 		CreatedOn: time.Now(),
 	}

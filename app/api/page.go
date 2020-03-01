@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"jongme/app/config"
 	"jongme/app/errs"
@@ -19,7 +18,7 @@ type PageDatabase interface {
 	GetPageByID(id string) (*model.Page, error)
 	CreatePage(page *model.Page) (*model.Page, error)
 	GetPages() ([]*model.Page, error)
-	UpdatePage(id string, page *model.Page) (*model.Page, error)
+	UpdatePage(page interface{}) (*model.Page, error)
 }
 
 type PageFb interface {
@@ -67,7 +66,7 @@ func (p *PageAPI) GetPageByID(ctx *fasthttp.RequestCtx) error {
 	}
 
 	pageID := ctx.UserValue("id").(string)
-	fmt.Println(pageID)
+	// fmt.Println(pageID)
 
 	page, err := p.DB.GetPageByID(pageID)
 
@@ -76,20 +75,39 @@ func (p *PageAPI) GetPageByID(ctx *fasthttp.RequestCtx) error {
 		PageID string             `json:"page_id,omitempty"`
 		Name   string             `json:"name,omitempty"`
 		// PageHours []*model.PageHours `json:"page_hours,omitempty"`
-		StartTime string    `json:"start_time"`
-		EndTime   string    `json:"end_time"`
-		IsActive  bool      `json:"is_active"`
-		IsBreak   bool      `json:"is_break"`
-		UpdatedOn time.Time `json:"updated_on,omitempty"`
-		CreatedOn time.Time `json:"created_on,omitempty"`
+		StartTime  string    `json:"start_time"`
+		EndTime    string    `json:"end_time"`
+		IsActive   bool      `json:"is_active"`
+		IsBreak    bool      `json:"is_break"`
+		BreakStart string    `json:"break_start"`
+		BreakEnd   string    `json:"break_end"`
+		Sun        bool      `json:"sun"`
+		Mon        bool      `json:"mon"`
+		Tue        bool      `json:"tue"`
+		Wed        bool      `json:"wed"`
+		Thu        bool      `json:"thu"`
+		Fri        bool      `json:"fri"`
+		Sat        bool      `json:"sat"`
+		UpdatedOn  time.Time `json:"updated_on,omitempty"`
+		CreatedOn  time.Time `json:"created_on,omitempty"`
 	}
 
 	pageOutput := &output{
-		ID:        page.ID,
-		PageID:    page.PageID,
-		Name:      page.Name,
-		StartTime: page.StartTime,
-		EndTime:   page.EndTime,
+		ID:         page.ID,
+		PageID:     page.PageID,
+		Name:       page.Name,
+		StartTime:  page.StartTime,
+		EndTime:    page.EndTime,
+		BreakStart: page.BreakStart,
+		BreakEnd:   page.BreakEnd,
+		Sun:        page.Sun,
+		Mon:        page.Mon,
+		Tue:        page.Tue,
+		Wed:        page.Wed,
+		Thu:        page.Thu,
+		Fri:        page.Fri,
+		Sat:        page.Sat,
+		// DayOfWeek:  page.DayOfWeek,
 		// PageHours: page.PageHours,
 		IsActive:  page.IsActive,
 		IsBreak:   page.IsBreak,
@@ -135,16 +153,16 @@ func (p *PageAPI) UpdatePage(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPut() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
-
-	input := model.Page{}
+	// fmt.Println("Update")
+	input := model.UpdatePage{}
 
 	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
 	}
 
-	pageID := ctx.UserValue("id").(string)
+	_ = ctx.UserValue("id").(string)
 
-	_, err := p.DB.UpdatePage(pageID, &input)
+	_, err := p.DB.UpdatePage(&input)
 
 	if err != nil {
 		return errs.NewHTTPError(err, 404, "service down not exists.")

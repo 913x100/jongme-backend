@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:1.13
 
 ENV JONGME_PATH /go/src/jongme 
 

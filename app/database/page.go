@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"jongme/app/model"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -44,20 +45,35 @@ func (m *Mongo) GetPageByID(id string) (*model.Page, error) {
 	return page, err
 }
 
-func (m *Mongo) UpdatePage(id string, page *model.Page) (*model.Page, error) {
-	doc, err := toDoc(page)
-	//check error
+func (m *Mongo) UpdatePage(p interface{}) (*model.Page, error) {
 
-	filter := bson.D{{"page_id", page.PageID}}
+	var filter bson.D
+	var doc *bson.M
+
+	switch p.(type) {
+	case *model.UpdatePage:
+		page := p.(*model.UpdatePage)
+		filter = bson.D{{"page_id", page.PageID}}
+		doc, _ = toDoc(page)
+		// fmt.Println(doc)
+		break
+	case *model.UpdatePageToken:
+		page := p.(*model.UpdatePageToken)
+		filter = bson.D{{"page_id", page.PageID}}
+		doc, _ = toDoc(page)
+		break
+	}
 	update := bson.M{
 		"$set": doc,
 	}
 
-	_, err = m.DB.Collection("pages").UpdateOne(
+	_, err := m.DB.Collection("pages").UpdateOne(
 		context.Background(),
 		filter,
 		update,
 	)
 
-	return page, err
+	fmt.Println(err)
+
+	return nil, err
 }

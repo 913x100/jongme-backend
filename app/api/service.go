@@ -222,7 +222,7 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 	startTime, _ := time.Parse("15:04:05", service.StartTime)
 	endTime, _ := time.Parse("15:04:05", service.EndTime)
 
-	fmt.Println(startTime, endTime)
+	// fmt.Println(startTime, endTime)
 
 	diff := int(endTime.Sub(startTime).Minutes())
 
@@ -238,7 +238,7 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 		slots = append(slots, t)
 	}
 
-	fmt.Println(slots)
+	// fmt.Println(slots)
 	// fmt.Println(startTime.Add(time.Minute * time.Duration(30)))
 
 	// fmt.Println(time.Now().Local())

@@ -20,7 +20,7 @@ type AuthDatabase interface {
 	GetUserByID(id string) (*model.User, error)
 	CreatePage(page *model.Page) (*model.Page, error)
 	GetPageByID(id string) (*model.Page, error)
-	UpdatePage(id string, page *model.Page) (*model.Page, error)
+	UpdatePage(page interface{}) (*model.Page, error)
 }
 
 type AuthFb interface {
@@ -194,10 +194,18 @@ func (a *Auth) SelectPage(ctx *fasthttp.RequestCtx) error {
 		//TODO check error
 
 	} else {
-		page.Name = pageWithToken.Name
-		page.AccessToken = pageWithToken.AccessToken
-		page.UpdatedOn = time.Now()
-		page, err = a.DB.UpdatePage(pageID, page)
+
+		p := &model.UpdatePageToken{
+			PageID:      pageWithToken.PageID,
+			AccessToken: pageWithToken.AccessToken,
+			Name:        pageWithToken.Name,
+		}
+
+		// page.PageID = pageWithToken.PageID
+		// page.Name = pageWithToken.Name
+		// page.AccessToken = pageWithToken.AccessToken
+		// page.UpdatedOn = time.Now()
+		_, err = a.DB.UpdatePage(p)
 	}
 
 	//Subscription webhook

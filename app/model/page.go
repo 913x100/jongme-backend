@@ -11,13 +11,24 @@ type Page struct {
 	PageID      string             `bson:"page_id" json:"page_id,omitempty"`
 	Name        string             `bson:"name" json:"name,omitempty"`
 	AccessToken string             `bson:"access_token" json:"access_token,omitempty"`
-	// PageHours   []*PageHours       `bson:"page_hours" json:"page_hours"`
-	StartTime string    `bson:"start_time" json:"start_time"`
-	EndTime   string    `bson:"end_time" json:"end_time"`
-	IsActive  bool      `bson:"is_active" json:"is_active"`
-	IsBreak   bool      `bson:"is_break" json:"is_break"`
-	UpdatedOn time.Time `bson:"updated_on" json:"updated_on,omitempty"`
-	CreatedOn time.Time `bson:"created_on" json:"created_on,omitempty"`
+	StartTime   string             `bson:"start_time" json:"start_time"`
+	EndTime     string             `bson:"end_time" json:"end_time"`
+	IsActive    bool               `bson:"is_active" json:"is_active"`
+	IsBreak     bool               `bson:"is_break" json:"is_break"`
+	BreakStart  string             `bson:"break_start" json:"break_start"`
+	BreakEnd    string             `bson:"break_end" json:"break_end"`
+	Sun         bool               `bson:"sun" json:"sun"`
+	Mon         bool               `bson:"mon" json:"mon"`
+	Tue         bool               `bson:"tue" json:"tue"`
+	Wed         bool               `bson:"wed" json:"wed"`
+	Thu         bool               `bson:"thu" json:"thu"`
+	Fri         bool               `bson:"fri" json:"fri"`
+	Sat         bool               `bson:"sat" json:"sat"`
+	UpdatedOn   time.Time          `bson:"updated_on" json:"updated_on,omitempty"`
+	CreatedOn   time.Time          `bson:"created_on" json:"created_on,omitempty"`
+}
+
+type DayOfWeek struct {
 }
 
 type PageHours struct {
@@ -29,11 +40,29 @@ type PageHours struct {
 	BreakEnd   int64 `bson:"break_end" json:"break_end"`
 }
 
+type UpdatePageToken struct {
+	PageID      string `bson:"page_id" json:"page_id"`
+	AccessToken string `bson:"access_token" json:"access_token"`
+	Name        string `bson:"name" json:"name"`
+	// UpdatedOn   time.Time `bson:"updated_on" json:"updated_on,omitempty"`
+	// CreatedOn   time.Time `bson:"created_on" json:"created_on,omitempty"`
+}
+
 type UpdatePage struct {
-	AccessToken string       `bson:"access_token" json:"access_token,omitempty"`
-	PageHours   []*PageHours `bson:"page_hours" json:"page_hours,omitempty"`
-	UpdatedOn   time.Time    `bson:"updated_on" json:"updated_on,omitempty"`
-	CreatedOn   time.Time    `bson:"created_on" json:"created_on,omitempty"`
+	PageID     string `bson:"page_id" json:"page_id,omitempty"`
+	StartTime  string `bson:"start_time" json:"start_time"`
+	EndTime    string `bson:"end_time" json:"end_time"`
+	IsActive   bool   `bson:"is_active" json:"is_active"`
+	IsBreak    bool   `bson:"is_break" json:"is_break"`
+	Sun        bool   `bson:"sun" json:"sun"`
+	Mon        bool   `bson:"mon" json:"mon"`
+	Tue        bool   `bson:"tue" json:"tue"`
+	Wed        bool   `bson:"wed" json:"wed"`
+	Thu        bool   `bson:"thu" json:"thu"`
+	Fri        bool   `bson:"fri" json:"fri"`
+	Sat        bool   `bson:"sat" json:"sat"`
+	BreakStart string `bson:"break_start" json:"break_start"`
+	BreakEnd   string `bson:"break_end" json:"break_end"`
 }
 
 type PageBooking struct {
@@ -52,12 +81,21 @@ func (p *Page) New() *Page {
 		Name:        p.Name,
 		AccessToken: p.AccessToken,
 		// PageHours:   p.PageHours,
-		StartTime: p.StartTime,
-		EndTime:   p.EndTime,
-		IsActive:  p.IsActive,
-		IsBreak:   p.IsBreak,
-		UpdatedOn: p.UpdatedOn,
-		CreatedOn: time.Now(),
+		StartTime:  p.StartTime,
+		EndTime:    p.EndTime,
+		IsActive:   p.IsActive,
+		IsBreak:    p.IsBreak,
+		BreakStart: p.BreakStart,
+		BreakEnd:   p.BreakEnd,
+		Sun:        p.Sun,
+		Mon:        p.Mon,
+		Tue:        p.Tue,
+		Wed:        p.Wed,
+		Thu:        p.Thu,
+		Fri:        p.Fri,
+		Sat:        p.Sat,
+		UpdatedOn:  p.UpdatedOn,
+		CreatedOn:  time.Now(),
 	}
 }
 
