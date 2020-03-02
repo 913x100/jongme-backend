@@ -7,7 +7,6 @@ import (
 	"jongme/app/fbbot"
 	"jongme/app/model"
 	"jongme/app/network"
-	"time"
 
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/bson"
@@ -154,28 +153,33 @@ func (f *FbAPI) step_service(pageID, userID string) interface{} {
 
 	page, _ := f.DB.GetPageByID(pageID)
 
-	fmt.Println("Page")
-	fmt.Println(page)
+	// fmt.Println("Page")
+	// fmt.Println(page)
 
-	t := time.Now().Weekday()
-	if (t == 0 && page.Sun == false) ||
-		(t == 1 && page.Mon == false) ||
-		(t == 2 && page.Tue == false) ||
-		(t == 3 && page.Wed == false) ||
-		(t == 4 && page.Thu == false) ||
-		(t == 5 && page.Fri == false) ||
-		(t == 6 && page.Sat == false) {
-		message := fbbot.NewTextMessage("ขออภัย ขณะนี้ไม่อยู่ในช่วงเวลาทำการ")
+	if !page.IsActive {
+		message := fbbot.NewTextMessage("ขออภัย ขณะนี้เพจปิดให้บริการชั่วคราว")
 		return message
 	}
 
-	a := time.Now().Format("15:04:05")
+	// t := time.Now().Weekday()
+	// if (t == 0 && page.Sun == false) ||
+	// 	(t == 1 && page.Mon == false) ||
+	// 	(t == 2 && page.Tue == false) ||
+	// 	(t == 3 && page.Wed == false) ||
+	// 	(t == 4 && page.Thu == false) ||
+	// 	(t == 5 && page.Fri == false) ||
+	// 	(t == 6 && page.Sat == false) {
+	// 	message := fbbot.NewTextMessage("ขออภัย ขณะนี้ไม่อยู่ในช่วงเวลาทำการ")
+	// 	return message
+	// }
 
-	if (a < page.StartTime || a > page.EndTime) ||
-		(a >= page.BreakStart && a < page.BreakEnd) {
-		message := fbbot.NewTextMessage("ขออภัย ขณะนี้ไม่อยู่ในช่วงเวลาทำการ")
-		return message
-	}
+	// a := time.Now().Format("15:04:05")
+
+	// if (a < page.StartTime || a > page.EndTime) ||
+	// 	(a >= page.BreakStart && a < page.BreakEnd) {
+	// 	message := fbbot.NewTextMessage("ขออภัย ขณะนี้ไม่อยู่ในช่วงเวลาทำการ")
+	// 	return message
+	// }
 	filter := []bson.M{}
 
 	filter = append(filter, bson.M{"page_id": bson.M{"$eq": pageID}})
@@ -210,7 +214,7 @@ func (f *FbAPI) step_cancel_booking(pageID, userID string) interface{} {
 	message := fbbot.NewQuickRepliesMessage("กรุณาเลือกบริการที่ต้องการยกเลิก")
 
 	for _, booking := range bookings {
-		fmt.Printf("%+v\n", booking)
+		// fmt.Printf("%+v\n", booking)
 		message.AddQuickRepliesItems(
 			fbbot.NewQuickRepliesText(
 				// booking.name,
