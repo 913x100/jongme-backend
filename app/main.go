@@ -26,6 +26,7 @@ func main() {
 	defer db.Close()
 
 	r := routers.Create(db)
+
 	cor := cors.New(cors.Options{
 		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS", "DELETE"},
 		AllowedOrigins:   []string{"*"},

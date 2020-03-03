@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"jongme/app/errs"
 	"jongme/app/model"
+	"sort"
 	"strconv"
 
 	"github.com/valyala/fasthttp"
@@ -161,6 +162,14 @@ func (b *BookingAPI) GetBookingByFilter(ctx *fasthttp.RequestCtx) error {
 	}
 
 	bookings, err := b.DB.GetBookingsAccordingFilter(filter)
+
+	sort.SliceStable(bookings, func(i, j int) bool {
+		if bookings[i].Day == bookings[j].Day {
+			return bookings[i].Time < bookings[j].Time
+		}
+		return bookings[i].Day < bookings[j].Day
+	})
+
 	if err != nil {
 		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}

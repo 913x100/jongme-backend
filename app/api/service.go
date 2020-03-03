@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"jongme/app/errs"
 	"jongme/app/model"
+	"os"
 	"strconv"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	"gopkg.in/go-playground/validator.v10"
 )
 
+type ServiceBucket interface {
+}
 type ServiceDatabase interface {
 	CreateService(service *model.Service) (*model.Service, error)
 	GetServices(page *model.Paging) ([]*model.Service, error)
@@ -22,6 +25,8 @@ type ServiceDatabase interface {
 	GetServicesAccordingFilter(filter []bson.M) ([]*model.Service, error)
 	UpdateService(service *model.Service) (*model.Service, error)
 	DeleteServiceByID(id primitive.ObjectID) error
+
+	GetPageByID(id string) (*model.Page, error)
 }
 
 type createServiceRequest struct {
@@ -44,6 +49,7 @@ type updateServiceRequest struct {
 
 type ServiceAPI struct {
 	DB       ServiceDatabase
+	Bucket   ServiceBucket
 	Validate *validator.Validate
 }
 
@@ -213,18 +219,23 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 	}
 
 	id, _ := withID(ctx, "id")
+	pageID, _ := ctx.UserValue("page_id").(string)
+	fmt.Println(id, pageID)
 	service, err := s.DB.GetServiceByID(id)
+	page, err := s.DB.GetPageByID(pageID)
 
 	if err != nil {
 		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}
 
-	startTime, _ := time.Parse("15:04:05", service.StartTime)
-	endTime, _ := time.Parse("15:04:05", service.EndTime)
-
+	startTime, _ := time.Parse("15:04:05", page.StartTime)
+	endTime, _ := time.Parse("15:04:05", page.EndTime)
+	fmt.Println(service)
 	// fmt.Println(startTime, endTime)
 
 	diff := int(endTime.Sub(startTime).Minutes())
+
+	fmt.Println(startTime, endTime, diff)
 
 	numSlot := diff / service.MinimumTimeLength
 
@@ -238,7 +249,7 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 		slots = append(slots, t)
 	}
 
-	// fmt.Println(slots)
+	fmt.Println(slots)
 	// fmt.Println(startTime.Add(time.Minute * time.Duration(30)))
 
 	// fmt.Println(time.Now().Local())
@@ -247,4 +258,28 @@ func (s *ServiceAPI) GetServicesSlots(ctx *fasthttp.RequestCtx) error {
 	json.NewEncoder(ctx).Encode(slots)
 
 	return nil
+}
+
+func (s *ServiceAPI) UploadPhoto(ctx *fasthttp.RequestCtx) {
+	fh, err := ctx.FormFile("image")
+
+	if err != nil {
+		return
+	}
+
+	path := "/uploads/" + time.Now().Format("2006-01-02T15:04:05.999999-07:00") + fh.Filename
+
+	if err := fasthttp.SaveMultipartFile(fh, path); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	file, err := os.OpenFile(path, os.O_RDWR, 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(file)
+	fmt.Println("path")
+
+	return
 }

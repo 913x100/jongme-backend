@@ -17,6 +17,7 @@ services:
       dockerfile: ./build/app/Dockerfile
     volumes:
       - ./app:/go/src/jongme/app
+      - ./app:/uploads
     environment:
       - TZ=Asia/Bangkok
       - APP_ENV=development
