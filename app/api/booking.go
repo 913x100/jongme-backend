@@ -29,11 +29,11 @@ func (b *BookingAPI) CreateBooking(ctx *fasthttp.RequestCtx) error {
 	if !ctx.IsPost() {
 		return errs.NewHTTPError(nil, 405, "Method not allowed.")
 	}
-	booking := model.Booking{}
+	input := model.Booking{}
 
 	// fmt.Println("book")
 
-	if err := json.Unmarshal(ctx.PostBody(), &booking); err != nil {
+	if err := json.Unmarshal(ctx.PostBody(), &input); err != nil {
 		return errs.NewHTTPError(err, 400, "Bad request : invalid JSON.")
 	}
 	// fmt.Println(booking)
@@ -44,8 +44,8 @@ func (b *BookingAPI) CreateBooking(ctx *fasthttp.RequestCtx) error {
 	// service := model.Service{
 	// 	PageID: input.PageID,
 	// }
-
-	_, err := b.DB.CreateBooking(booking.New())
+	booking := input.New()
+	_, err := b.DB.CreateBooking(booking)
 	if err != nil {
 		return errs.NewHTTPError(err, 500, "Internal server error.")
 	}

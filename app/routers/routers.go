@@ -165,7 +165,7 @@ func Create(db *database.Mongo) *router.Router {
 	facebook := sv.Group("/fb")
 	facebook.GET("/webhook", facebookHandler.Webhook)
 	facebook.POST("/webhook", facebookHandler.RecieveWebhook)
-	facebook.GET("/", facebookHandler.SendSuccesMessage)
+	facebook.POST("/success", facebookHandler.SendSuccesMessage)
 
 	booking := sv.Group("/booking")
 	booking.POST("/", rootHandler(bookingHandler.CreateBooking))

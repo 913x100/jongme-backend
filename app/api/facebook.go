@@ -17,6 +17,7 @@ type FbDatabase interface {
 	GetPageByID(id string) (*model.Page, error)
 	GetServicesAccordingFilter(query []bson.M) ([]*model.Service, error)
 	GetBookingsAccordingFilter(query []bson.M) ([]*model.Booking, error)
+	UpdateBooking(booking *model.Booking) (*model.Booking, error)
 	DeleteBookingByID(id primitive.ObjectID) error
 }
 
@@ -88,14 +89,31 @@ func (f *FbAPI) RecieveWebhook(ctx *fasthttp.RequestCtx) {
 }
 
 func (f *FbAPI) SendSuccesMessage(ctx *fasthttp.RequestCtx) {
-	userID := string(ctx.FormValue("user_id"))
-	pageID := string(ctx.FormValue("page_id"))
 
-	message := fbbot.NewTextMessage("การจองสำเร็จ")
+	if !ctx.IsPost() {
+		return
+	}
 
-	page, _ := f.DB.GetPageByID(pageID)
+	booking := model.Booking{}
 
-	f.FB.SendTextMessage(userID, page.AccessToken, message)
+	if err := json.Unmarshal(ctx.PostBody(), &booking); err != nil {
+		return
+	}
+
+	booking_id := primitive.ObjectID.Hex(booking.ID)
+
+	msg := fmt.Sprintf("การจองสำเร็จ\n\n%s-%s-%s\nat %s\nYes or no", booking.Year, booking.Month, booking.Day, booking.Time)
+	message := fbbot.NewQuickRepliesMessage(msg)
+
+	message.AddQuickRepliesItems(
+		fbbot.NewQuickRepliesText("Yes",
+			fmt.Sprintf(`{"step_id":%d, "page_id":"%s", "user_id":"%s", "service_id":"%s", "booking_id":"%s"}`, 3, booking.PageID, booking.UserID, booking.ServiceID, booking_id)),
+		fbbot.NewQuickRepliesText("No",
+			fmt.Sprintf(`{"step_id":%d, "page_id":"%s", "user_id":"%s", "service_id":"%s", "booking_id":"%s"}`, 4, booking.PageID, booking.UserID, booking.ServiceID, booking_id)),
+	)
+	page, _ := f.DB.GetPageByID(booking.PageID)
+
+	f.FB.SendQuickRepliesMessage(booking.UserID, page.AccessToken, message)
 
 	return
 }
@@ -114,9 +132,19 @@ func (f *FbAPI) Process(r fbbot.User, payload Payload) {
 		message := f.step_booking(payload.PageID, payload.ServiceID, r.ID)
 		f.Send(r, page.AccessToken, message)
 		break
+	case 3:
+		fmt.Println(3)
+		message := f.step_confirm_booking(payload.BookingID)
+		f.Send(r, page.AccessToken, message)
+		break
+	case 4:
+		fmt.Println(3)
+		message := f.step_cancel_booking1(payload.BookingID)
+		f.Send(r, page.AccessToken, message)
+		break
 	case -1:
 		fmt.Println(-1)
-		message := f.step_cancel_booking(payload.PageID, r.ID)
+		message := f.step_cancel_booking2(payload.PageID, r.ID)
 		f.Send(r, page.AccessToken, message)
 		break
 	case -2:
@@ -203,7 +231,7 @@ func (f *FbAPI) step_booking(pageID, serviceID, userID string) interface{} {
 	return message
 }
 
-func (f *FbAPI) step_cancel_booking(pageID, userID string) interface{} {
+func (f *FbAPI) step_cancel_booking2(pageID, userID string) interface{} {
 
 	filter := []bson.M{}
 
@@ -239,4 +267,42 @@ func (f *FbAPI) step_cancel_success(pageID, userID, bookingID string) interface{
 	}
 
 	return message
+}
+
+func (f *FbAPI) step_confirm_booking(bookingID string) interface{} {
+
+	id, _ := primitive.ObjectIDFromHex(bookingID)
+	filter := []bson.M{}
+
+	filter = append(filter, bson.M{"_id": bson.M{"$eq": id}})
+	bookings, _ := f.DB.GetBookingsAccordingFilter(filter)
+
+	booking := bookings[0]
+
+	booking.Status = 1
+
+	_, _ = f.DB.UpdateBooking(booking)
+
+	message := fbbot.NewTextMessage("ยืนยันสำเร็จ")
+
+	return message
+
+}
+
+func (f *FbAPI) step_cancel_booking1(bookingID string) interface{} {
+
+	id, _ := primitive.ObjectIDFromHex(bookingID)
+	filter := []bson.M{}
+
+	filter = append(filter, bson.M{"_id": bson.M{"$eq": id}})
+	bookings, _ := f.DB.GetBookingsAccordingFilter(filter)
+
+	booking := bookings[0]
+
+	_ = f.DB.DeleteBookingByID(booking.ID)
+
+	message := fbbot.NewTextMessage("ล้างรายการสำเร็จ")
+
+	return message
+
 }
